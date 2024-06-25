@@ -152,3 +152,33 @@ def multi_box_iou_xywh(box1, box2):
     b2_area = (b2_x2 - b2_x1) * (b2_y2 - b2_y1)
 
     return inter_area / (b1_area + b2_area - inter_area)
+
+def box_crop(boxes, labels, crop, img_shape):
+    x, y, w, h = map(float, crop)
+    im_w, im_h = map(float, img_shape)
+
+    boxes = boxes.copy()
+    boxes[:, 0], boxes[:, 2] = (boxes[:, 0] - boxes[:, 2] / 2) * im_w, (
+        boxes[:, 0] + boxes[:, 2] / 2) * im_w
+    boxes[:, 1], boxes[:, 3] = (boxes[:, 1] - boxes[:, 3] / 2) * im_h, (
+        boxes[:, 1] + boxes[:, 3] / 2) * im_h
+
+    crop_box = np.array([x, y, x + w, y + h])
+    centers = (boxes[:, :2] + boxes[:, 2:]) / 2.0
+    mask = np.logical_and(crop_box[:2] <= centers, centers <= crop_box[2:]).all(
+        axis=1)
+
+    boxes[:, :2] = np.maximum(boxes[:, :2], crop_box[:2])
+    boxes[:, 2:] = np.minimum(boxes[:, 2:], crop_box[2:])
+    boxes[:, :2] -= crop_box[:2]
+    boxes[:, 2:] -= crop_box[:2]
+
+    mask = np.logical_and(mask, (boxes[:, :2] < boxes[:, 2:]).all(axis=1))
+    boxes = boxes * np.expand_dims(mask.astype('float32'), axis=1)
+    labels = labels * mask.astype('float32')
+    boxes[:, 0], boxes[:, 2] = (boxes[:, 0] + boxes[:, 2]) / 2 / w, (
+        boxes[:, 2] - boxes[:, 0]) / w
+    boxes[:, 1], boxes[:, 3] = (boxes[:, 1] + boxes[:, 3]) / 2 / h, (
+        boxes[:, 3] - boxes[:, 1]) / h
+
+    return boxes, labels, mask.sum()
