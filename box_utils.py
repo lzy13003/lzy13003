@@ -182,3 +182,51 @@ def box_crop(boxes, labels, crop, img_shape):
         boxes[:, 3] - boxes[:, 1]) / h
 
     return boxes, labels, mask.sum()
+
+# 隨機裁剪
+def random_crop(img,
+                boxes,
+                labels,
+                scales=[0.3, 1.0],
+                max_ratio=2.0,
+                constraints=None,
+                max_trial=50):
+    if len(boxes) == 0:
+        return img, boxes
+
+    if not constraints:
+        constraints = [(0.1, 1.0), (0.3, 1.0), (0.5, 1.0), (0.7, 1.0),
+                       (0.9, 1.0), (0.0, 1.0)]
+
+    img = Image.fromarray(img)
+    w, h = img.size
+    crops = [(0, 0, w, h)]
+    for min_iou, max_iou in constraints:
+        for _ in range(max_trial):
+            scale = random.uniform(scales[0], scales[1])
+            aspect_ratio = random.uniform(max(1 / max_ratio, scale * scale), \
+                                          min(max_ratio, 1 / scale / scale))
+            crop_h = int(h * scale / np.sqrt(aspect_ratio))
+            crop_w = int(w * scale * np.sqrt(aspect_ratio))
+            crop_x = random.randrange(w - crop_w)
+            crop_y = random.randrange(h - crop_h)
+            crop_box = np.array([[(crop_x + crop_w / 2.0) / w,
+                                  (crop_y + crop_h / 2.0) / h,
+                                  crop_w / float(w), crop_h / float(h)]])
+
+            iou = multi_box_iou_xywh(crop_box, boxes)
+            if min_iou <= iou.min() and max_iou >= iou.max():
+                crops.append((crop_x, crop_y, crop_w, crop_h))
+                break
+
+    while crops:
+        crop = crops.pop(np.random.randint(0, len(crops)))
+        crop_boxes, crop_labels, box_num = box_crop(boxes, labels, crop, (w, h))
+        if box_num < 1:
+            continue
+        img = img.crop((crop[0], crop[1], crop[0] + crop[2],
+                        crop[1] + crop[3])).resize(img.size, Image.LANCZOS)
+        img = np.asarray(img)
+        return img, crop_boxes, crop_labels
+    img = np.asarray(img)
+    return img, boxes, labels
