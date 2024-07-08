@@ -230,3 +230,21 @@ def random_crop(img,
         return img, crop_boxes, crop_labels
     img = np.asarray(img)
     return img, boxes, labels
+
+# 隨機缩放
+def random_interp(img, size, interp=None):
+    interp_method = [
+        cv2.INTER_NEAREST,
+        cv2.INTER_LINEAR,
+        cv2.INTER_AREA,
+        cv2.INTER_CUBIC,
+        cv2.INTER_LANCZOS4,
+    ]
+    if not interp or interp not in interp_method:
+        interp = interp_method[random.randint(0, len(interp_method) - 1)]
+    h, w, _ = img.shape
+    im_scale_x = size / float(w)
+    im_scale_y = size / float(h)
+    img = cv2.resize(
+        img, None, None, fx=im_scale_x, fy=im_scale_y, interpolation=interp)
+    return img
