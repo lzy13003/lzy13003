@@ -248,3 +248,20 @@ def random_interp(img, size, interp=None):
     img = cv2.resize(
         img, None, None, fx=im_scale_x, fy=im_scale_y, interpolation=interp)
     return img
+    
+# 圖像增廣方法匯總
+def image_augment(img, gtboxes, gtlabels, size, means=None):
+    # 隨機改變亮暗、恢復和顏色等
+    img = random_distort(img)
+    # 隨機填充
+    img, gtboxes = random_expand(img, gtboxes, fill=means)
+    # 隨機裁剪
+    img, gtboxes, gtlabels, = random_crop(img, gtboxes, gtlabels)
+    # 隨機缩放
+    img = random_interp(img, size)
+    # 隨機翻转
+    img, gtboxes = random_flip(img, gtboxes)
+    # 隨機打乱真实框排列顺序
+    gtboxes, gtlabels = shuffle_gtbox(gtboxes, gtlabels)
+
+    return img.astype('float32'), gtboxes.astype('float32'), gtlabels.astype('int32')
