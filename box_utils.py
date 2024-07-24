@@ -265,3 +265,14 @@ def image_augment(img, gtboxes, gtlabels, size, means=None):
     gtboxes, gtlabels = shuffle_gtbox(gtboxes, gtlabels)
 
     return img.astype('float32'), gtboxes.astype('float32'), gtlabels.astype('int32')
+
+def get_img_data(record, size=640):
+    img, gt_boxes, gt_labels, scales = get_img_data_from_file(record)
+    img, gt_boxes, gt_labels = image_augment(img, gt_boxes, gt_labels, size)
+    mean = [0.485, 0.456, 0.406]
+    std = [0.229, 0.224, 0.225]
+    mean = np.array(mean).reshape((1, 1, -1))
+    std = np.array(std).reshape((1, 1, -1))
+    img = (img / 255.0 - mean) / std
+    img = img.astype('float32').transpose((2, 0, 1))
+    return img, gt_boxes, gt_labels, scales
