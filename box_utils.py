@@ -276,3 +276,29 @@ def get_img_data(record, size=640):
     img = (img / 255.0 - mean) / std
     img = img.astype('float32').transpose((2, 0, 1))
     return img, gt_boxes, gt_labels, scales
+
+# 随机改变亮暗、对比度和颜色等
+def random_distort(img):
+    # 随机改变亮度
+    def random_brightness(img, lower=0.5, upper=1.5):
+        e = np.random.uniform(lower, upper)
+        return ImageEnhance.Brightness(img).enhance(e)
+    # 随机改变对比度
+    def random_contrast(img, lower=0.5, upper=1.5):
+        e = np.random.uniform(lower, upper)
+        return ImageEnhance.Contrast(img).enhance(e)
+    # 随机改变颜色
+    def random_color(img, lower=0.5, upper=1.5):
+        e = np.random.uniform(lower, upper)
+        return ImageEnhance.Color(img).enhance(e)
+
+    ops = [random_brightness, random_contrast, random_color]
+    np.random.shuffle(ops)
+
+    img = Image.fromarray(img)
+    img = ops[0](img)
+    img = ops[1](img)
+    img = ops[2](img)
+    img = np.asarray(img)
+
+    return img
