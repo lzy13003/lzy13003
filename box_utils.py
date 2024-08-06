@@ -302,3 +302,22 @@ def random_distort(img):
     img = np.asarray(img)
 
     return img
+
+# 定义可视化函数，用于对比原图和图像增强的效果
+import matplotlib.pyplot as plt
+def visualize(srcimg, img_enhance):
+    # 图像可视化
+    plt.figure(num=2, figsize=(6,12))
+    plt.subplot(1,2,1)
+    plt.title('Src Image', color='#0000FF')
+    plt.axis('off') # 不显示坐标轴
+    plt.imshow(srcimg) # 显示原图片
+
+    # 对原图做 随机改变亮暗、对比度和颜色等 数据增强
+    srcimg_gtbox = records[0]['gt_bbox']
+    srcimg_label = records[0]['gt_class']
+
+    plt.subplot(1,2,2)
+    plt.title('Enhance Image', color='#0000FF')
+    plt.axis('off') # 不显示坐标轴
+    plt.imshow(img_enhance)
