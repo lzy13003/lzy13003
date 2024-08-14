@@ -321,3 +321,21 @@ def visualize(srcimg, img_enhance):
     plt.title('Enhance Image', color='#0000FF')
     plt.axis('off') # 不显示坐标轴
     plt.imshow(img_enhance)
+
+# 获取一个批次内样本随机缩放的尺寸
+def get_img_size(mode):
+    if (mode == 'train') or (mode == 'valid'):
+        inds = np.array([0,1,2,3,4,5,6,7,8,9])
+        ii = np.random.choice(inds)
+        img_size = 320 + ii * 32
+    else:
+        img_size = 608
+    return img_size
+
+# 将 list形式的batch数据 转化成多个array构成的tuple
+def make_array(batch_data):
+    img_array = np.array([item[0] for item in batch_data], dtype = 'float32')
+    gt_box_array = np.array([item[1] for item in batch_data], dtype = 'float32')
+    gt_labels_array = np.array([item[2] for item in batch_data], dtype = 'int32')
+    img_scale = np.array([item[3] for item in batch_data], dtype='int32')
+    return img_array, gt_box_array, gt_labels_array, img_scale
