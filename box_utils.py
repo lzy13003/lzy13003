@@ -339,3 +339,38 @@ def make_array(batch_data):
     gt_labels_array = np.array([item[2] for item in batch_data], dtype = 'int32')
     img_scale = np.array([item[3] for item in batch_data], dtype='int32')
     return img_array, gt_box_array, gt_labels_array, img_scale
+
+# 测试数据读取
+def test_data_loader(datadir, batch_size= 10, test_image_size=608, mode='test'):
+    """
+    加载测试用的图片，测试数据没有groundtruth标签
+    """
+    image_names = os.listdir(datadir)
+    def reader():
+        batch_data = []
+        img_size = test_image_size
+        for image_name in image_names:
+            file_path = os.path.join(datadir, image_name)
+            img = cv2.imread(file_path)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            H = img.shape[0]
+            W = img.shape[1]
+            img = cv2.resize(img, (img_size, img_size))
+
+            mean = [0.485, 0.456, 0.406]
+            std = [0.229, 0.224, 0.225]
+            mean = np.array(mean).reshape((1, 1, -1))
+            std = np.array(std).reshape((1, 1, -1))
+            out_img = (img / 255.0 - mean) / std
+            out_img = out_img.astype('float32').transpose((2, 0, 1))
+            img = out_img #np.transpose(out_img, (2,0,1))
+            im_shape = [H, W]
+
+            batch_data.append((image_name.split('.')[0], img, im_shape))
+            if len(batch_data) == batch_size:
+                yield make_test_array(batch_data)
+                batch_data = []
+        if len(batch_data) > 0:
+            yield make_test_array(batch_data)
+
+    return reader
